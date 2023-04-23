@@ -10,7 +10,7 @@ airflow:
   ##
   image:
     repository: apache/airflow
-    tag: 2.2.5-python3.8
+    tag: 2.5.3-python3.8
     pullPolicy: IfNotPresent
     pullSecret: ""
     uid: 50000
@@ -160,8 +160,16 @@ airflow:
   ##       description: "example pool with 5 slots"
   ##       slots: 5
   ##     - name: "pool_2"
-  ##       description: "example pool with 10 slots"
-  ##       slots: 10
+  ##       description: "example pool with 2 cron policies"
+  ##       slots: 0
+  ##       ## at each sync interval, the policy with the most recently past `recurrence` is applied
+  ##       policies:
+  ##         - name: "scale up at 7pm UTC"
+  ##           slots: 50
+  ##           recurrence: "0 19 * * *"
+  ##         - name: "scale down at 6am UTC"
+  ##           slots: 10
+  ##           recurrence: "0 6 * * *"
   ##
   pools: []
 
@@ -559,6 +567,12 @@ scheduler:
     ##
     enabled: false
 
+    ## the `apiVersion` to use for PodDisruptionBudget resources
+    ## - for Kubernetes 1.21 and later: "policy/v1"
+    ## - for Kubernetes 1.20 and before: "policy/v1beta1"
+    ##
+    apiVersion: policy/v1
+
     ## the maximum unavailable pods/percentage for the scheduler
     ##
     maxUnavailable: ""
@@ -664,6 +678,11 @@ web:
   ########################################
   ##
   webserverConfig:
+    ## if the `webserver_config.py` file is mounted
+    ## - set to false if you wish to mount your own `webserver_config.py` file
+    ##
+    enabled: true
+
     ## the full content of the `webserver_config.py` file (as a string)
     ## - docs for Flask-AppBuilder security configs:
     ##   https://flask-appbuilder.readthedocs.io/en/latest/security.html
@@ -746,6 +765,12 @@ web:
     ## if a PodDisruptionBudget resource is created for the web Deployment
     ##
     enabled: false
+
+    ## the `apiVersion` to use for PodDisruptionBudget resources
+    ## - for Kubernetes 1.21 and later: "policy/v1"
+    ## - for Kubernetes 1.20 and before: "policy/v1beta1"
+    ##
+    apiVersion: policy/v1
 
     ## the maximum unavailable pods/percentage for the web Deployment
     ##
@@ -877,6 +902,12 @@ workers:
     ##
     enabled: false
 
+    ## the `apiVersion` to use for PodDisruptionBudget resources
+    ## - for Kubernetes 1.21 and later: "policy/v1"
+    ## - for Kubernetes 1.20 and before: "policy/v1beta1"
+    ##
+    apiVersion: policy/v1
+
     ## the maximum unavailable pods/percentage for the worker StatefulSet
     ##
     maxUnavailable: ""
@@ -905,6 +936,12 @@ workers:
     enabled: false
     maxReplicas: 2
     metrics: []
+
+    ## the `apiVersion` to use for HorizontalPodAutoscaler resources
+    ## - for Kubernetes 1.23 and later: "autoscaling/v2"
+    ## - for Kubernetes 1.22 and before: "autoscaling/v2beta2"
+    ##
+    apiVersion: autoscaling/v2
 
   ## configs for the celery worker Pods
   ##
@@ -1047,6 +1084,12 @@ triggerer:
     ##
     enabled: false
 
+    ## the `apiVersion` to use for PodDisruptionBudget resources
+    ## - for Kubernetes 1.21 and later: "policy/v1"
+    ## - for Kubernetes 1.20 and before: "policy/v1beta1"
+    ##
+    apiVersion: policy/v1
+
     ## the maximum unavailable pods/percentage for the triggerer Deployment
     ##
     maxUnavailable: ""
@@ -1157,6 +1200,12 @@ flower:
     ## if a PodDisruptionBudget resource is created for the flower Deployment
     ##
     enabled: false
+
+    ## the `apiVersion` to use for PodDisruptionBudget resources
+    ## - for Kubernetes 1.21 and later: "policy/v1"
+    ## - for Kubernetes 1.20 and before: "policy/v1beta1"
+    ##
+    apiVersion: policy/v1
 
     ## the maximum unavailable pods/percentage for the flower Deployment
     ##
@@ -1310,8 +1359,8 @@ dags:
     ## the git-sync container image
     ##
     image:
-      repository: k8s.gcr.io/git-sync/git-sync
-      tag: v3.5.0
+      repository: registry.k8s.io/git-sync/git-sync
+      tag: v3.6.5
       pullPolicy: IfNotPresent
       uid: 65533
       gid: 65533
@@ -1359,6 +1408,11 @@ dags:
     ## the max number of seconds allowed for a complete sync
     ##
     syncTimeout: 120
+
+    ## the git submodule behavior
+    ## - allowed values: "recursive", "shallow", "off"
+    ##
+    submodules: recursive
 
     ## the name of a pre-created Secret with git http credentials
     ##
@@ -1643,7 +1697,7 @@ pgbouncer:
   ##
   image:
     repository: ghcr.io/airflow-helm/pgbouncer
-    tag: 1.17.0-patch.0
+    tag: 1.18.0-patch.1
     pullPolicy: IfNotPresent
     uid: 1001
     gid: 1001
@@ -1704,6 +1758,12 @@ pgbouncer:
     ## if a PodDisruptionBudget resource is created for the pgbouncer Deployment
     ##
     enabled: false
+
+    ## the `apiVersion` to use for PodDisruptionBudget resources
+    ## - for Kubernetes 1.21 and later: "policy/v1"
+    ## - for Kubernetes 1.20 and before: "policy/v1beta1"
+    ##
+    apiVersion: policy/v1
 
     ## the maximum unavailable pods/percentage for the pgbouncer Deployment
     ##
@@ -1825,6 +1885,14 @@ postgresql:
   ## - set to `false` if using `externalDatabase.*`
   ##
   enabled: true
+
+  ## configs for the postgres container image
+  ##
+  image:
+    registry: ghcr.io
+    repository: airflow-helm/postgresql-bitnami
+    tag: 11.16-patch.0
+    pullPolicy: IfNotPresent
 
   ## the postgres database to use
   ##
@@ -1959,6 +2027,14 @@ redis:
   ## - set to `false` if using `externalRedis.*`
   ##
   enabled: true
+
+  ## configs for the redis container image
+  ##
+  image:
+    registry: docker.io
+    repository: bitnami/redis
+    tag: 5.0.14-debian-10-r173
+    pullPolicy: IfNotPresent
 
   ## the redis password
   ##

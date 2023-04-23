@@ -1,7 +1,7 @@
-FROM alpine:3.14 AS builder
+FROM alpine:3.15 AS builder
 
 # args -- software versions
-ARG PGBOUNCER_VERSION=1.17.0
+ARG PGBOUNCER_VERSION=1.18.0
 
 # install -- pgbouncer build dependanices
 RUN apk --no-cache add \
@@ -29,7 +29,7 @@ RUN curl -sL "https://www.pgbouncer.org/downloads/files/${PGBOUNCER_VERSION}/pgb
  && make \
  && make install
 
-FROM alpine:3.14
+FROM alpine:3.15
 
 # args -- uid/gid
 ARG PGBOUNCER_USER=pgbouncer
@@ -53,6 +53,10 @@ RUN apk --no-cache add \
 RUN apk --no-cache add \
     postgresql-client \
     python3
+
+# install -- openssl (used in startup script to generate self-signed certs)
+RUN apk --no-cache add \
+    openssl
 
 # install -- pgbouncer
 COPY --from=builder /usr/local/bin/pgbouncer /usr/local/bin/pgbouncer
